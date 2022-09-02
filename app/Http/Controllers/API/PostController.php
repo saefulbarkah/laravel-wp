@@ -123,10 +123,15 @@ class PostController extends Controller
             "content" => $request->content,
         ]);
 
+        // make url key unique
+        $makeSlug = Str::slug($request->title);
+        $urlKey =  $makeSlug . '-' . uniqid();
+
         // update data local db
         $article->update([
             "title" => $request->title,
             "content" => $request->content,
+            "url_key" => $urlKey,
         ]);
 
         // show message
