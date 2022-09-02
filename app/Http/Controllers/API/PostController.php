@@ -117,15 +117,16 @@ class PostController extends Controller
             ]);
         }
 
+        // make url key unique
+        $makeSlug = Str::slug($request->title);
+        $urlKey =  $makeSlug . '-' . uniqid();
+
         // find article id from db wp and then updating data
         $wpArticle = Http::withBasicAuth($this->user_key, $this->pw_key)->post($this->wpurl . "posts/" . $article->wp_post_id, [
             "title" => $request->title,
             "content" => $request->content,
+            "slug" => $urlKey
         ]);
-
-        // make url key unique
-        $makeSlug = Str::slug($request->title);
-        $urlKey =  $makeSlug . '-' . uniqid();
 
         // update data local db
         $article->update([
