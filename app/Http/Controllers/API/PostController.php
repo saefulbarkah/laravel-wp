@@ -7,8 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Post;
-use Carbon\Carbon;
-use GuzzleHttp\Client;
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Http;
 
 class PostController extends Controller
@@ -41,7 +40,6 @@ class PostController extends Controller
 
         $validate = Validator::make($request->all(), [
             'title' => 'required',
-            'url_key' => 'required|unique:post,url_key|alpha_dash',
             'content' => 'required',
         ]);
 
@@ -54,12 +52,22 @@ class PostController extends Controller
         // get author
         $author = $request->author === null ? Auth::user() : $request->author;
 
+        // make url key unique
+        $makeSlug = Str::slug($request->title);
+        $urlKey =  $makeSlug . '-' . uniqid();
+
+        // if ($urlKey) {
+        //     return $urlKey;
+        // }
+        // return false;
+
         // request post to wordpress
         $wpPost = Http::withBasicAuth($this->user_key, $this->pw_key)->post($this->wpurl . "posts", [
             'title' => $request->title,
             'content' => $request->content,
             'status' => "publish",
             'author' => $author->wp_user_id,
+            'slug' => $urlKey
         ]);
 
         // get post value id from wordpress db
@@ -68,7 +76,7 @@ class PostController extends Controller
         // creating data to db local laravel
         $post = Post::create([
             "title" => $request->title,
-            "url_key" => $request->url_key,
+            "url_key" => $urlKey,
             "content" => $request->content,
             "author" => $author->name,
             "wp_post_id" => $wpPostId["id"],
