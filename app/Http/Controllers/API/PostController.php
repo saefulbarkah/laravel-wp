@@ -139,7 +139,7 @@ class PostController extends Controller
         return response()->json([
             "message" => "data berhasil di update",
             "db_local" => $article,
-            "db_wordpress" => $wpArticle
+            "db_wordpress" => json_decode($wpArticle)
         ]);
     }
 
