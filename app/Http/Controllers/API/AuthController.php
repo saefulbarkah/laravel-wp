@@ -8,12 +8,28 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Validator;
 
 class AuthController extends Controller
 {
     public function register(Request $request)
     {
-        // register user wordpress as author
+        // make validatation
+        $validate = Validator::make($request->all(), [
+            "name" => "required",
+            "email" => "required|unique:users,email",
+            "password" => "required"
+        ]);
+
+        // checking data
+        if ($validate->fails()) {
+            return response()->json([
+                "message" => "Register gagal",
+                "error_messages" => $validate->messages(),
+            ]);
+        }
+
+        // register user to wordpress as author
         $createUserWp = Http::withBasicAuth(env("API_WP_USER"), env("API_WP_PW"))->post(env("API_WP_URL") . "users", [
             "username" => $request->name,
             "name" => $request->name,
@@ -31,6 +47,7 @@ class AuthController extends Controller
             "wp_user_id" => $wpUserId["id"],
         ]);
 
+        // create token
         $token = $user->createToken("authToken")->plainTextToken;
 
         // show message
@@ -44,6 +61,21 @@ class AuthController extends Controller
 
     public function login(Request $request)
     {
+        // make validatation
+        $validate = Validator::make($request->all(), [
+            "email" => "required|same:email",
+            "password" => "required"
+        ]);
+
+        // checking data
+        if ($validate->fails()) {
+            return response()->json([
+                "message" => "Login gagal",
+                "error_messages" => $validate->messages(),
+            ]);
+        }
+
+        // login method
         if (Auth::attempt($request->only('email', 'password'))) {
             $user = User::where("email", $request->email)->first();
             $token = $user->createToken("authToken")->plainTextToken;
@@ -55,6 +87,7 @@ class AuthController extends Controller
         } else {
             return response()->json([
                 "message" => "Login gagal",
+                "error_messages" => "Email atau password salah",
             ]);
         }
     }
